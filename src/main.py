@@ -27,8 +27,8 @@ def process_results(input_file1, input_file2, output_excel, output_pdf_dir):
     print(f"File Excel đã được lưu tại: {output_excel}")
     print(f"Các file PDF đã được lưu trong thư mục: {output_pdf_dir}")
 
-input_file1 = "data/input/inputtest.xlsx"
-input_file2 = "data/input/matran.xlsx"
-output_excel = "data/output/output.xlsx"
-output_pdf_dir = "data/output/DanhSachTheoTenTruong/"
+input_file1 = "E:\Edmicro\Generate-reports\data\input\inputtest.xlsx"
+input_file2 = "E:\Edmicro\Generate-reports\data\input\matran.xlsx"
+output_excel = "E:\Edmicro\Generate-reports\data\output\output.xlsx"
+output_pdf_dir = "E:\Edmicro\Generate-reports\data\output\DanhSachTheoTenTruong"
 process_results(input_file1, input_file2, output_excel, output_pdf_dir)
