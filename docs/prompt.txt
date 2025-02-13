@@ -1,0 +1,26 @@
+Bạn là giáo viên môn Toán lớp 10, hãy giúp tôi tạo thêm 5 câu hỏi và giải những câu hỏi đó dựa vào mẫu có sẵn của tôi, yêu cầu cụ thể như sau:
+
+Mẫu lời giải:
+```
+Lời giải
+Chọn A
+Áp dụng định lý cosin trong tam giác $ABC$ ta có: 
+$B{C^2} = A{B^2} + A{C^2} - 2AB.AC.\cos A = {4^2} + 3 - 2.4.\sqrt 3 .\cos 30^\circ  = 7$.
+Từ đó ta tìm được $BC = \sqrt 7 $.
+```
+
+Nội dung câu hỏi:
+```
+Câu 1. Cho tam giác $ABC$ có $AB = 4,AC = \sqrt 3 ,\widehat A = 30^\circ $. Tính độ dài cạnh $BC$.
+A. $BC = \sqrt 7 $.	
+B. $BC = 7$.
+C. $BC = 5$.
+D. $BC = \sqrt {11} $.
+```
+
+Yêu cầu cụ thể:
+- Nội dung câu hỏi trắc nghiệm là dạng **trắc nghiệm 1 đáp án đúng** nằm trong chương trình toán lớp 10 dạng **Cho 2 cạnh và góc xen giữa. Tính độ dài cạnh thứ 3**
+- Nội dung phải thay đổi số liệu, đối tượng (nếu có), lưu ý độ khó phải tương đương với câu gốc.
+- Các công thức tính phải được chuyển về mã Latex và bọc trong dấu $...$.
+- Luồng của tôi là dựa vào Lời giải mẫu, bạn hãy thay đổi số liệu, đối tượng (nếu có) và xử lý lời giải trước nhưng đáp án giải ra phải là đáp án cuối cùng (không được để như $\sqrt {89 + 20\sqrt 3}$). Sau đó bạn hãy thêm nội dung câu hỏi, dựa vào đáp án đúng ở lời giải hãy cho vào 1 trong đáp án A,B,C,D bất kì. 
+- Hãy bám sát yêu cầu, đừng thêm hay bớt nội dung nào.
