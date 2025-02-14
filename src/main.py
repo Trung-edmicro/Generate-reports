@@ -10,6 +10,14 @@ def process_results(input_file1, input_file2, output_excel, output_pdf_dir):
     # Xủ lý
     df1 = evaluate_answers(df1, df2)
 
+    for i in range(0, len(df1), batch_size):
+        batch_df = df1[i:i + batch_size]
+
+        # In ra kích thước của từng lô để kiểm tra
+        print(f"Kích thước của lô {i // batch_size + 1}: {len(batch_df)}")
+
+        # (Add function to handle each batch)
+
     # Xuất file Excel
     save_results(df1, output_excel, output_pdf_dir)
 
@@ -31,4 +39,5 @@ input_file1 = "E:\Edmicro\Generate-reports\data\input\inputtest.xlsx"
 input_file2 = "E:\Edmicro\Generate-reports\data\input\matran.xlsx"
 output_excel = "E:\Edmicro\Generate-reports\data\output\output.xlsx"
 output_pdf_dir = "E:\Edmicro\Generate-reports\data\output\DanhSachTheoTenTruong"
+batch_size = 15
 process_results(input_file1, input_file2, output_excel, output_pdf_dir)
