@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QListWidget, QStackedWidget
-from pages.ui_generator_report import GeneratorReport
-from pages.ui_home import HomePage
+from ui.pages.ui_generator_report import GeneratorReport
+from ui.pages.ui_home import HomePage
 
 class ReportWindow(QWidget):
     def __init__(self):

@@ -4,32 +4,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
-# import ui.components.separator
-
-def create_separator(number):
-    separator_widget = QWidget()
-    
-    layout = QVBoxLayout(separator_widget)
-    
-    number_label = QLabel(str(number))
-    
-    font = QFont()
-    font.setPointSize(16) 
-    number_label.setFont(font)
-    
-    separator = QFrame()
-    separator.setFrameShape(QFrame.HLine)
-    separator.setFrameShadow(QFrame.Sunken)
-    separator.setFixedHeight(5)  
-    
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.setSpacing(0)
-    layout.addWidget(number_label)
-    layout.addWidget(separator)
-    
-    separator_widget.setLayout(layout)
-    
-    return separator_widget
+from ..components.separator import create_separator
 
 class ProcessingThread(QThread):
     progress = pyqtSignal(int)
@@ -70,6 +45,10 @@ class GeneratorReport(QWidget):
     
     def initUI(self):
         main_layout = QVBoxLayout()
+        separator = create_separator()
+
+        title_process = QLabel("Xử lý kết quả")
+        title_process.setFont(QFont("Arial", 12))
 
         # File Kết Quả
         label_result = QLabel("File Kết Quả:")
@@ -110,11 +89,15 @@ class GeneratorReport(QWidget):
         process_layout.addWidget(self.cancel_button)
         process_layout.addWidget(self.progress_bar)
 
+        main_layout.addWidget(title_process)
         main_layout.addWidget(label_result)
         main_layout.addLayout(file_result_layout)
         main_layout.addWidget(label_matrix)
         main_layout.addLayout(file_matrix_layout)
         main_layout.addLayout(process_layout)
+        main_layout.addWidget(separator)
+
+
         main_layout.addStretch()
 
         self.setLayout(main_layout)

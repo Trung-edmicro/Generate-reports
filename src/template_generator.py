@@ -78,9 +78,7 @@ def docx_to_fpdf_code(docx_path):
                 return "Căn đều hai bên"
             case _:
                 return f"Chưa có định dạng của {text}"
-    
-    pdf_code.append("pdf.output('output.pdf')")
-    
+        
     return '\n'.join(pdf_code)
 
 # Chạy hàm với file template.docx
