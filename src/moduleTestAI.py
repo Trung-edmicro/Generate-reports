@@ -1,7 +1,7 @@
-import google.generativeai as genai
+import os
 import time
 import concurrent.futures
-import os
+import google.generativeai as genai
 import google.api_core.exceptions
 from dotenv import load_dotenv
 
@@ -21,7 +21,7 @@ def make_request(prompt):
         return response.text
     except google.api_core.exceptions.ResourceExhausted as e:
         print(f"Lỗi Rate Limit: {e}")
-        return "RATE_LIMITED"  # Trả về giá trị đặc biệt
+        return "RATE_LIMITED"
     except Exception as e:
         print(f"Lỗi khi gửi request: {e}")
         return None
