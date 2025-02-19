@@ -1,5 +1,7 @@
 import os
 import pandas as pd
+import numpy as np
+import multiprocessing as mp
 
 def processor_data(input_file1, input_file2):
     # Đọc file kết quả làm bài
@@ -14,26 +16,21 @@ def processor_data(input_file1, input_file2):
     # Đọc file ma trận kiến thức
     df2 = pd.read_excel(input_file2, engine='openpyxl', header=0)
     df2 = df2.rename(columns=lambda x: str(x).strip())
-    df2["Cấp độ nhận thức"] = df2["Cấp độ nhận thức"].fillna("").astype(str).str.strip()
-    df2["Chủ đề"] = df2["Chủ đề"].fillna("").astype(str).str.strip()
-    df2["Nội dung"] = df2["Nội dung"].fillna("").astype(str).str.strip()
-    df2["Bài"] = df2["Bài"].fillna("").astype(str).str.strip()
 
     return df1, df2
 
-def evaluate_answers(df1, df2):
+def evaluate_chunk(rows, df2, total_basic, total_advanced):
     """
-    Đánh giá kết quả làm bài dựa trên đáp án và ma trận kiến thức.
+    Xử lý một nhóm dữ liệu (~15 học sinh) trong tiến trình song song.
     """
-    total_basic = (df2["Cấp độ nhận thức"].isin(["NB", "TH"])).sum()
-    total_advanced = (df2["Cấp độ nhận thức"].isin(["VD", "VDC"])).sum()
-
-    def evaluate_row(row):
+    results = []
+    for row in rows:
         student_answers = row["Câu trả lời"]
         correct_answers = row["Đáp án"]
 
         if not student_answers.strip():
-            return pd.Series([0, 25, False, 0, 0, "", ""])
+            results.append([0, 25, False, 0, 0, "", ""])
+            continue
 
         correct_count = 0
         wrong_count = 0
@@ -48,15 +45,6 @@ def evaluate_answers(df1, df2):
 
             if student_choice in [".", "*", ""] or student_choice != correct_choice:
                 wrong_count += 1
-                if i < len(df2):
-                    topic = df2.iloc[i]["Chủ đề"].strip() if pd.notna(df2.iloc[i]["Chủ đề"]) else ""
-                    content = df2.iloc[i]["Nội dung"].strip() if pd.notna(df2.iloc[i]["Nội dung"]) else ""
-                    exercise = df2.iloc[i]["Bài"].strip() if pd.notna(df2.iloc[i]["Bài"]) else ""
-                    link = df2.iloc[i]["Link bài luyện"].strip() if pd.notna(df2.iloc[i]["Link bài luyện"]) else ""
-
-                    if exercise and content:
-                        wrong_details.add((topic, content, exercise, link))
-
             else:
                 correct_count += 1
                 if df2.iloc[i]["Cấp độ nhận thức"] in ["NB", "TH"]:
@@ -64,42 +52,44 @@ def evaluate_answers(df1, df2):
                 elif df2.iloc[i]["Cấp độ nhận thức"] in ["VD", "VDC"]:
                     correct_advanced += 1
 
-                if i < len(df2):
-                    topic = df2.iloc[i]["Chủ đề"].strip() if pd.notna(df2.iloc[i]["Chủ đề"]) else ""
-                    content = df2.iloc[i]["Nội dung"].strip() if pd.notna(df2.iloc[i]["Nội dung"]) else ""
-                    exercise = df2.iloc[i]["Bài"].strip() if pd.notna(df2.iloc[i]["Bài"]) else ""
-
-                    if exercise and content:
-                        correct_details.add((topic, content, exercise))
-
         percent_basic = (correct_basic / total_basic * 100) if total_basic > 0 else 0
         percent_advanced = (correct_advanced / total_advanced * 100) if total_advanced > 0 else 0
 
-        # Danh sách nội dung các câu đúng
-        review_text = "; ".join([
-            f"{topic} - {content}: {exercise}"
-            for topic, content, exercise in sorted(correct_details)
-        ]) if correct_count > 12 else ""
+        results.append([correct_count, wrong_count, correct_count > 20, percent_basic, percent_advanced, "", ""])
 
-        # Danh sách nội dung các câu sai
-        wrong_text = "; ".join([
-            f"{topic} - {content}: {exercise} ({link})" if link else f"{exercise}"
-            for topic, content, exercise, link in sorted(wrong_details)
-        ]) if wrong_details else ""
+    return results
 
-        return pd.Series([correct_count, wrong_count, correct_count > 20, percent_basic, percent_advanced, review_text, wrong_text])
+def evaluate_answers(df1, df2):
+    """
+    Sử dụng multiprocessing để xử lý đánh giá câu trả lời theo nhóm.
+    """
+    total_basic = (df2["Cấp độ nhận thức"].isin(["NB", "TH"])).sum()
+    total_advanced = (df2["Cấp độ nhận thức"].isin(["VD", "VDC"])).sum()
 
-    # Áp dụng đánh giá cho từng học sinh
+    # Chia dữ liệu thành danh sách nhóm (15 dòng mỗi nhóm)
+    chunks = [df1.iloc[i:i+15].to_dict(orient="records") for i in range(0, len(df1), 15)]
+
+    # Chạy multiprocessing
+    with mp.Pool(mp.cpu_count()) as pool:
+        results = pool.starmap(evaluate_chunk, [(chunk, df2, total_basic, total_advanced) for chunk in chunks])
+        pool.close()
+        pool.join()
+
+    # Gộp kết quả lại
+    flattened_results = [item for sublist in results for item in sublist]
+
+    # Thêm dữ liệu vào dataframe
     df1[[
-        "Số câu trả lời đúng", 
-        "Số câu trả lời sai", 
-        "Học sinh trên 20 điểm", 
-        "Mức độ kiến thức cơ bản đạt được", 
-        "Mức độ kiến thức nâng cao đạt được", 
-        "Nhận xét về kết quả bài thi", 
+        "Số câu trả lời đúng",
+        "Số câu trả lời sai",
+        "Học sinh trên 20 điểm",
+        "Mức độ kiến thức cơ bản đạt được",
+        "Mức độ kiến thức nâng cao đạt được",
+        "Nhận xét về kết quả bài thi",
         "Nội dung câu trả lời sai"
-    ]] = df1.apply(evaluate_row, axis=1)
+    ]] = pd.DataFrame(flattened_results, index=df1.index)
 
+    # Chuyển phần trăm thành dạng hiển thị %
     df1["Mức độ kiến thức cơ bản đạt được"] = df1["Mức độ kiến thức cơ bản đạt được"].round(0).astype(int).astype(str) + "%"
     df1["Mức độ kiến thức nâng cao đạt được"] = df1["Mức độ kiến thức nâng cao đạt được"].round(0).astype(int).astype(str) + "%"
 

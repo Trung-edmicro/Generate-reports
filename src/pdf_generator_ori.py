@@ -2,7 +2,6 @@ import os
 import re
 from fpdf import FPDF
 from collections import Counter, defaultdict
-import multiprocessing as mp
 
 FONT_DIR = os.path.join(os.path.dirname(__file__), "../assets/fonts/")
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), "../assets/images/")
@@ -14,7 +13,7 @@ class PDF(FPDF):
         self.set_y(-15) 
         self.image(footer_image, x=0, y=282, w=215)  
 
-def generate_pdf_for_student(row, output_pdf):
+def pdf_generator(row, output_pdf):
     pdf = FPDF()
     pdf.add_page()
 
@@ -166,18 +165,3 @@ def generate_pdf_for_student(row, output_pdf):
     pdf.image(footer_image , x=0, y=282, w=215)
 
     pdf.output(pdf_file)
-
-def pdf_generator(df1, output_pdf_dir):
-    """ Chạy đa tiến trình để xuất PDF cho nhiều học sinh cùng lúc. """
-    os.makedirs(output_pdf_dir, exist_ok=True)
-    
-    # Tạo danh sách task cho multiprocessing
-    tasks = [(row, output_pdf_dir) for _, row in df1.iterrows()]
-    
-    # Sử dụng multiprocessing để tạo file PDF song song
-    with mp.Pool(mp.cpu_count()) as pool:
-        pool.starmap(generate_pdf_for_student, tasks)
-        pool.close()
-        pool.join()
-
-    print(f"📂 Tất cả file PDF đã được lưu trong thư mục: {output_pdf_dir}")    
