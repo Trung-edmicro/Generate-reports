@@ -12,7 +12,7 @@ if not GOOGLE_API_KEY:
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Chọn model Gemini 2.0 Flash
-model = genai.GenerativeModel('gemini-2.0-flash')  # Thay đổi nếu có phiên bản khác
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 
 student_data = {

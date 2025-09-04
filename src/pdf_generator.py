@@ -1,19 +1,39 @@
 import os
 import re
+import pandas as pd
 from fpdf import FPDF
 from collections import Counter, defaultdict
+
+# print(FPDF)
 
 FONT_DIR = os.path.join(os.path.dirname(__file__), "../assets/fonts/")
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), "../assets/images/")
 footer_image = os.path.join(IMAGE_DIR, "footer-image.png")
 header_image = os.path.join(IMAGE_DIR, "header-image.png")
 
+# Đường dẫn file Excel đầu vào
+input_excel = "data/output/output.xlsx"
+output_folder = "data/output/Tổng hợp báo cáo"
+
+# Tạo thư mục output nếu chưa có
+os.makedirs(output_folder, exist_ok=True)
+
+def sanitize_filename(filename):
+    """Loại bỏ ký tự đặc biệt để tránh lỗi khi tạo file."""
+    return "".join(c if c.isalnum() or c in " _-" else "_" for c in filename)
+
+def check_and_add_page(pdf, lines_count, line_height=8, margin_bottom=15):
+    """Kiểm tra nếu không đủ chỗ cho n dòng nữa thì thêm trang"""
+    needed_space = lines_count * line_height
+    if pdf.get_y() + needed_space + margin_bottom > pdf.h:
+        pdf.add_page()
+
 class PDF(FPDF):
     def footer(self):
         self.set_y(-15) 
         self.image(footer_image, x=0, y=282, w=215)  
 
-def pdf_generator(row, output_pdf):
+def pdf_generator(row, sheet_name, output_pdf):
     pdf = FPDF()
     pdf.add_page()
 
@@ -25,143 +45,176 @@ def pdf_generator(row, output_pdf):
     pdf.image(header_image , x=0, y=0, w=210)
     pdf.ln(22)
 
-    id = str(row.get("SBD", "Unknown"))
-    pdf_file = os.path.join(output_pdf, f"{id}.pdf")
+    # Lấy thông tin từ dòng dữ liệu
+    student_name = sanitize_filename(str(row["Họ và tên"]).strip())
+    class_name = sanitize_filename(str(row["Lớp"]).strip())
+    match = re.match(r"(.+?)\s+Khối\s+\d+", sheet_name)
+    subject_name = match.group(1) if match else sheet_name
+
+    # Đặt tên file PDF theo format: Lớp_Họ và tên_Môn.pdf
+    pdf_filename = f"{class_name}_{student_name}_{sheet_name}.pdf"
+    pdf_path = os.path.join(output_pdf, pdf_filename)
+
+    percent_correct = round((row['Đúng'] / row['Tổng câu hỏi']) * 100)
+    percent_wrong = round((row['Sai'] / row['Tổng câu hỏi']) * 100)
 
     pdf.set_font("DejaVu", "B", size=13)
     pdf.cell(200, 10, "THÔNG BÁO", ln=True, align="C")
-    pdf.cell(200, 10, "KẾT QUẢ KỲ THI TOÁN HỌC HOA KỲ AMC8 – 2025", ln=True, align="C")
+    pdf.cell(200, 10, "KẾT QUẢ THI CUỐI KỲ II NĂM HỌC 2024 - 2025", ln=True, align="C")
     pdf.ln(5)
     pdf.set_font("DejaVu", size=11)
-    pdf.cell(0, 8, f"Họ và tên thí sinh: {row['Họ và tên đệm']} {row['Tên']}", ln=True)
+    pdf.cell(0, 8, f"Họ và tên: {row['Họ và tên']}", ln=True)
     pdf.cell(0, 8, f"Lớp: {row['Lớp']}", ln=True)
-    pdf.cell(0, 8, f"Trường: {row['Trường']}", ln=True)
-    pdf.cell(0, 8, "Tham gia Kỳ thi Toán học Hoa Kỳ AMC8, ngày thi 22/01/2025.", ln=True)
+    pdf.cell(0, 8, f"Môn: {subject_name}", ln=True)
     pdf.set_font("DejaVu", style="BI")
-    pdf.cell(0, 10, "BTC Kỳ thi gửi thông báo kết quả thi như sau:", ln=True, link="")
+    pdf.cell(0, 10, "Nhà trường gửi thông báo kết quả thi như sau:", ln=True, link="")
     pdf.cell(5)
     pdf.set_font("DejaVu", size=11)
-    pdf.cell(0, 10, "• Tổng số câu hỏi: 25 câu", ln=True)
+    pdf.cell(0, 10, f"• Tổng số câu hỏi: {row['Tổng câu hỏi']} câu", ln=True)
     pdf.cell(5)
-    student_answers = f"• Thí sinh đã trả lời lần lượt là: {row['Câu trả lời']}"
-    pdf.cell(pdf.get_string_width(student_answers) + 2, 10, student_answers, ln=False)
-    pdf.set_text_color(0, 0, 255)
-    pdf.cell(0, 10, "(Xem lại đề thi tại đây)", link="https://drive.google.com/file/d/1FjNquIMwWxjjupX3VXaUF0gg4yKQ08bm/view", ln=True)
-    pdf.set_text_color(0, 0, 0) 
+    pdf.cell(0, 10, f"• Số câu trả lời đúng: {row['Đúng']} ({percent_correct}%)", ln=True)
     pdf.cell(5)
-
-    percent_correct = round((row['Số câu trả lời đúng'] / 25) * 100)
-    percent_wrong = round((row['Số câu trả lời sai'] / 25) * 100)
-    pdf.cell(0, 10, f"• Số câu trả lời đúng: {row['Số câu trả lời đúng']} ({percent_correct}%)", ln=True)
+    pdf.cell(0, 10, f"• Số câu trả lời sai: {row['Sai']} ({percent_wrong}%)", ln=True)
     pdf.cell(5)
-    pdf.cell(0, 10, f"• Số câu trả lời sai: {row['Số câu trả lời sai']} ({percent_wrong}%)", ln=True)
-    pdf.cell(5)
-    pdf.cell(0, 10, f"• Điểm số: {row['Số câu trả lời đúng']}/25", ln=True)
+    pdf.cell(0, 10, f"• Điểm số: {row['Điểm']}", ln=True)
     pdf.set_font("DejaVu", style="B")
-    pdf.cell(0, 10, "1. Nhận xét về kết quả bài thi:", ln=True)
-
-    pdf.set_font("DejaVu", size=11)
-    if isinstance(row['Nhận xét về kết quả bài thi'], str) and row['Nhận xét về kết quả bài thi'].strip():
-        list_exercises_correct = row['Nhận xét về kết quả bài thi'].split(";")
-
-        topics = []
-        for exercises_correct in list_exercises_correct:
-            exercises_correct = exercises_correct.strip()
-            if exercises_correct:
-                match = re.match(r"(.+) - (.+): (.+)", exercises_correct)
-                if match:
-                    topic = match.group(1) 
-                    topics.append(topic)
-
-        topic_counts = Counter(topics)
-        top_topics = [t[0] for t in topic_counts.most_common(5)]
-
-        # Tạo nội dung in ra PDF
-        if top_topics:
-            topics_text = ", ".join(top_topics)
-            pdf.multi_cell(0, 8, f"Thí sinh đã hiểu và áp dụng tốt vào giải các chủ đề: {topics_text}.", ln=True)
-
+    pdf.cell(0, 10, "1. Kết quả chi tiết cho thấy:", ln=True)
     pdf.cell(5)
+    pdf.set_font("DejaVu", size=11)
     pdf.cell(0, 8, f"• Mức độ kiến thức cơ bản đạt được: {row['Mức độ kiến thức cơ bản đạt được']}", ln=True)
     pdf.cell(5)
     pdf.cell(0, 8, f"• Mức độ kiến thức nâng cao đạt được: {row['Mức độ kiến thức nâng cao đạt được']}", ln=True)
+    pdf.cell(5)
+    pdf.cell(0, 10, f"• Xếp hạng trong lớp: {row['Thứ hạng trong lớp']}", ln=True)
+    pdf.cell(5)
+    pdf.cell(0, 10, f"• Xếp hạng trong toàn khối: {row['Thứ hạng trong khối']}", ln=True)
     pdf.set_font("DejaVu", style="B")
     pdf.cell(0, 10, "2. Định hướng cải thiện và phát triển:", ln=True)
     pdf.set_font("DejaVu", size=11)
-    results_pass = str(row.get("Học sinh trên 20 điểm", "")).strip().lower()
-    if results_pass == "x":
-        pdf.multi_cell(0, 8, "Thí sinh đã đáp ứng được các kỹ năng và kiến thức môn Toán cần thiết ở lứa tuổi này, BTC hy vọng thí sinh tiếp tục giữ vững và phát huy.", ln=True)
-        pdf.ln(1.6)
-    else:
-        if isinstance(row['Nội dung câu trả lời sai'], str) and row['Nội dung câu trả lời sai'].strip():
-            pdf.cell(0, 8, f"Thí sinh tham khảo gợi ý luyện tập theo các kiến thức liên quan như sau:", ln=True)
 
-            list_exercises_wrong = row['Nội dung câu trả lời sai'].split(";")
+    feedbacks = re.sub(r'\n\s*\n', '\n', str(row['Nhận xét'])).strip()
+    pdf.multi_cell(0, 8, feedbacks, ln=True)
+    pdf.ln(2)
 
-            # Dictionary để nhóm bài tập theo topic
-            topic_dict = defaultdict(list)
+    if isinstance(row['Nội dung cần cải thiện'], str) and row['Nội dung cần cải thiện'].strip():
+        pdf.cell(0, 8, f"Em có thể tham khảo gợi ý luyện tập theo các kiến thức liên quan như sau:", ln=True)
 
-            for exercises_wrong in list_exercises_wrong:
-                exercises_wrong = exercises_wrong.strip()
-                if exercises_wrong:
-                    match = re.match(r"(.+?) - (.+?): (.+?)\s*\((https?://[^\)]+)\)", exercises_wrong)
-                    if match:
-                        topic, content, exercise, link = match.groups()
-                    else:
-                        match = re.match(r"(.+?) - (.+?): (.+)", exercises_wrong)
-                        if match:
-                            topic, content, exercise = match.groups()
-                            link = None
-                        else:
-                            continue
+        topics = row['Nội dung cần cải thiện'].split(";")
+        topics = [t.strip() for t in topics if t.strip()]
 
-                    # Thêm exercise vào topic tương ứng
-                    topic_dict[topic].append((exercise, link))
+        has_subject = any(re.match(r"(.+?)\s*-\s*(.+?):\s*(.+)", t) for t in topics)
 
-            # Chọn đúng 3 topic có nhiều bài tập nhất
-            top_topics = sorted(topic_dict.keys(), key=lambda x: len(topic_dict[x]), reverse=True)[:3]
+        if has_subject:
+            pdf_structure = {}
+            topic_counts = {}
 
-            total_exercises = 0
+            for topic_data in topics:
+                match = re.match(r"(.+?)\s*-\s*(.+?):\s*(.+)", topic_data)
+                if match:
+                    subject, topic, content_list = match.groups()
+                    subject = subject.strip()
+                    topic = topic.strip()
+                    contents = [c.strip() for c in content_list.split(" - ")][:2]  # Tối đa 2 bài
 
-            for topic in top_topics:
-                if total_exercises >= 5:  
-                    break
+                    # Khởi tạo nếu môn chưa có
+                    if subject not in pdf_structure:
+                        pdf_structure[subject] = {}
+                        topic_counts[subject] = 0
 
-                pdf.cell(5)
-                pdf.cell(0, 8, f"• {topic}:", ln=True)
+                    # Bỏ qua nếu đã đủ 4 topic
+                    if topic_counts[subject] >= 4:
+                        continue
 
-                exercises_to_print = topic_dict[topic][:2]
+                    # Bỏ qua nếu topic đã tồn tại
+                    if topic in pdf_structure[subject]:
+                        continue
 
-                for exercise, link in exercises_to_print:
-                    if total_exercises >= 5:
-                        break
+                    # Ghi nhận topic và tăng đếm
+                    pdf_structure[subject][topic] = contents
+                    topic_counts[subject] += 1
 
-                    pdf.cell(8)
-                    text = f"◦ {exercise}"
+            # In theo thứ tự ưu tiên nếu có, rồi đến các môn còn lại
+            subject_priority = ["Toán", "Ngữ Văn", "Tiếng Anh"]
+            printed_subjects = set()
 
-                    if link:
-                        pdf.cell(pdf.get_string_width(text) + 2, 8, text, ln=False)
-                        pdf.set_text_color(0, 0, 255)
-                        pdf.cell(0, 8, "(Link bài luyện)", link=link, ln=True)
-                        pdf.set_text_color(0, 0, 0)
-                    else:
-                        pdf.cell(0, 8, text, ln=True)
+            for subject in subject_priority:
+                if subject in pdf_structure:
+                    pdf.set_font("DejaVu", style="I")
+                    pdf.cell(0, 8, f"- {subject}", ln=True)
+                    pdf.set_font("DejaVu", size=11)
+                    for topic, lessons in pdf_structure[subject].items():
+                        lines_needed = 1 + len(lessons)
+                        check_and_add_page(pdf, lines_count=lines_needed)
 
-                    total_exercises += 1
+                        pdf.cell(8)
+                        pdf.cell(0, 8, f"• {topic}:", ln=True)
+                        for lesson in lessons:
+                            pdf.cell(16)
+                            pdf.cell(0, 8, f"◦ {lesson}", ln=True)
+                    printed_subjects.add(subject)
 
-        pdf.add_page()
-        pdf.multi_cell(0, 8, "Dựa trên các nội dung định hướng trên, thí sinh có thể truy cập đường liên kết được gợi ý đi kèm mỗi phần kiến thức và đăng nhập tài khoản do Ban Tổ chức cấp để luyện tập (thời gian sử dụng miễn phí đến hết ngày 15/05/2025)", ln=True)
-        pdf.ln(1.5)
-        pdf.cell(0, 10, f"Tên đăng nhập: {row.get('Tên đăng nhập', 'N/A')}", ln=True)
-        pdf.cell(0, 10, f"Mật khẩu: {row.get('Mật khẩu', 'N/A')}", ln=True)
+            # In các môn còn lại (ngoài danh sách ưu tiên)
+            for subject in pdf_structure:
+                if subject not in printed_subjects:
+                    pdf.set_font("DejaVu", style="I")
+                    pdf.cell(0, 8, f"- {subject}", ln=True)
+                    pdf.set_font("DejaVu", size=11)
+                    for topic, lessons in pdf_structure[subject].items():
+                        lines_needed = 1 + len(lessons)
+                        check_and_add_page(pdf, lines_count=lines_needed)
 
-    pdf.multi_cell(0, 8, f"Chúng tôi tin rằng với sự cố gắng và nỗ lực, thí sinh {row['Họ và tên đệm']} {row['Tên']} sẽ tiếp tục đạt được nhiều thành tích cao hơn nữa.", ln=True)
-    pdf.ln(1.6)
-    pdf.multi_cell(0, 8, "Cảm ơn sự quan tâm và hy vọng chúng tôi sẽ tiếp tục nhận được sự ủng hộ và đồng hành của Quý thầy cô, Quý Phụ huynh và thí sinh trong những kỳ thi tiếp theo.", ln=True)
+                        pdf.cell(8)
+                        pdf.cell(0, 8, f"• {topic}:", ln=True)
+                        for lesson in lessons:
+                            pdf.cell(16)
+                            pdf.cell(0, 8, f"◦ {lesson}", ln=True)
+
+        else:
+            for topic_data in topics:
+                match = re.match(r"(.+?):\s*(.+)", topic_data)
+                if match:
+                    topic, content_list = match.groups()
+                    topic = topic.strip()
+                    contents = [c.strip() for c in content_list.split(" - ")][:3]
+
+                    pdf.cell(5)
+                    pdf.cell(0, 8, f"• {topic}:", ln=True)
+                    for content in contents:
+                        pdf.cell(8)
+                        pdf.cell(0, 8, f"◦ {content}", ln=True)
+
     pdf.ln(3)
-    pdf.set_font("DejaVu", style="B")
-    pdf.cell(0, 10, "BTC KỲ THI TOÁN HỌC HOA KỲ - AMC8", ln=True, align="R")
+    pdf.multi_cell(0, 8, f"Chúng tôi tin rằng với sự cố gắng và nỗ lực, thí sinh {row['Họ và tên']} sẽ tiếp tục đạt được nhiều thành tích cao hơn nữa.", ln=True)
+    pdf.ln(1.6)
+    pdf.multi_cell(0, 8, "Cảm ơn sự quan tâm và hy vọng chúng tôi sẽ tiếp tục nhận được sự ủng hộ, đồng hành của Quý Phụ huynh và thí sinh trong những kỳ thi tiếp theo.", ln=True)
 
-    pdf.image(footer_image , x=0, y=282, w=215)
+    pdf.image(footer_image , x=0, y=278, w=215)
 
-    pdf.output(pdf_file)
+    pdf.output(pdf_path)
+
+def process_excel(input_file, output_folder):
+    """Hàm xử lý file Excel và tạo các file PDF"""
+    # Đọc tất cả các sheet trong file Excel
+    xls = pd.ExcelFile(input_file)
+
+    for sheet_name in xls.sheet_names:
+        df = pd.read_excel(xls, sheet_name)
+
+        if "Lớp" not in df.columns or "Họ và tên" not in df.columns:
+            print(f"Bỏ qua sheet {sheet_name} do không có cột 'Lớp' hoặc 'Họ và tên'.")
+            continue
+
+        # Xử lý từng học sinh
+        for _, row in df.iterrows():
+            class_name = str(row["Lớp"]).strip()
+            sheet_output_folder = os.path.join(output_folder, sheet_name, f"Lớp {class_name}")
+            os.makedirs(sheet_output_folder, exist_ok=True)
+
+            # Tạo PDF cho từng học sinh
+            pdf_generator(row, sheet_name, sheet_output_folder)
+
+
+# Gọi hàm xử lý file Excel
+if __name__ == "__main__":
+    process_excel(input_excel, output_folder)
+    print("Hoàn tất tạo file PDF!")

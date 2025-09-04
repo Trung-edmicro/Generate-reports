@@ -105,6 +105,19 @@ def evaluate_answers(df1, df2):
 
     df1["Học sinh trên 20 điểm"] = df1["Học sinh trên 20 điểm"].replace({True: "X", False: ""})
 
+    # **XẾP HẠNG TRONG LỚP**
+    df1["Số câu trả lời đúng"] = df1["Số câu trả lời đúng"].astype(int)
+    df1["Thứ hạng trong lớp"] = df1.groupby("Lớp")["Số câu trả lời đúng"].rank(ascending=False, method="dense").astype("Int64")
+    
+    df1["Thứ hạng trong lớp"] = df1["Thứ hạng trong lớp"].astype(str) + "/" + df1.groupby("Lớp")["Số câu trả lời đúng"].transform("count").astype(str)
+
+    # **XẾP HẠNG TRONG KHỐI**
+    df1["Thứ hạng trong khối"] = df1.groupby(df1["Lớp"].str.extract(r'(\d+)')[0])["Số câu trả lời đúng"].rank(ascending=False, method="dense").astype("Int64")
+    
+    df1["Thứ hạng trong khối"] = df1["Thứ hạng trong khối"].astype(str) + "/" + df1.groupby(df1["Lớp"].str.extract(r'(\d+)')[0])["Số câu trả lời đúng"].transform("count").astype(str)
+
+    df1.loc[df1["Câu trả lời"].str.strip() == "", ["Thứ hạng trong lớp", "Thứ hạng trong khối"]] = "Không thi"
+
     return df1
 
 def save_results(df1, output_excel, output_pdf_dir):

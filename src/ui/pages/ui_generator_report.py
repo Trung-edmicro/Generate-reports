@@ -1,6 +1,6 @@
 import time
 from PyQt5.QtWidgets import (
-    QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QProgressBar, QFrame, QSpacerItem, QSizePolicy
+    QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QLineEdit, QFileDialog, QProgressBar, QRadioButton
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -89,6 +89,46 @@ class GeneratorReport(QWidget):
         process_layout.addWidget(self.cancel_button)
         process_layout.addWidget(self.progress_bar)
 
+        # Xử lý file mẫu
+        label_report_template = QLabel("File Báo Cáo Mẫu:")
+        radio_default = QRadioButton("Mặc định")
+        radio_custom = QRadioButton("Khác (Chỉ file .docx)")
+
+        radio_default.setChecked(True)
+        
+        report_layout = QHBoxLayout()
+        report_layout.addWidget(label_report_template)
+        report_layout.addWidget(radio_default)
+        report_layout.addWidget(radio_custom)
+        report_layout.addStretch(1)
+
+        file_report_template_layout = QHBoxLayout()
+        self.file_path_report_template = QLineEdit()
+        self.file_path_report_template.setReadOnly(True)
+        btn_choose_template = QPushButton("Chọn file")
+        btn_choose_template.clicked.connect(lambda: self.choose_file(self.file_path_report_template))
+
+        file_report_template_layout.addWidget(self.file_path_report_template)
+        file_report_template_layout.addWidget(btn_choose_template)       
+        self.file_path_report_template.setVisible(False)
+        btn_choose_template.setVisible(False)
+
+        # Hàm xử lý khi chọn radio button
+        def toggle_radio():
+            is_default = radio_default.isChecked()
+            is_custom = radio_custom.isChecked()
+
+            if is_default:
+                self.file_path_report_template.setVisible(False)
+                btn_choose_template.setVisible(False)
+
+            if is_custom:
+                self.file_path_report_template.setVisible(True)
+                btn_choose_template.setVisible(True)
+                
+        radio_default.toggled.connect(toggle_radio)
+        radio_custom.toggled.connect(toggle_radio)
+
         main_layout.addWidget(title_process)
         main_layout.addWidget(label_result)
         main_layout.addLayout(file_result_layout)
@@ -96,8 +136,9 @@ class GeneratorReport(QWidget):
         main_layout.addLayout(file_matrix_layout)
         main_layout.addLayout(process_layout)
         main_layout.addWidget(separator)
-
-
+        main_layout.addLayout(report_layout)
+        main_layout.addLayout(file_report_template_layout)
+      
         main_layout.addStretch()
 
         self.setLayout(main_layout)
