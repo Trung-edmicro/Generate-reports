@@ -1,32 +1,21 @@
-Hãy viết một nhận xét về kết quả học tập của học sinh tên {student_name}.
-Kết quả của học sinh như sau:
-- Điểm: {point}
-- Kiến thức cơ bản đạt được: {correct_basic} câu, tương ứng {percent_basic}%
-- Kiến thức nâng cao đạt được: {correct_advanced} câu, tương ứng {percent_advanced}%
-- Thứ hạng trong lớp: {class_rank}
-- Thứ hạng trong khối: {grade_rank}
+Hãy viết một đoạn nhận xét về kết quả học tập của học sinh tên {student_name}.
+Dữ liệu kết quả như sau:
+- Tổng số câu: {total_questions}
+- Điểm số: {point}
+- Số câu đúng: {correct}
+- Số câu sai: {wrong}
+- Số câu bỏ qua: {skip}
+- Kiến thức cơ bản: {correct_basic} câu đúng ({percent_basic}%)
+- Kiến thức nâng cao: {correct_advanced} câu đúng ({percent_advanced}%)
 - Các nội dung cần cải thiện: {improvement_content}
 
 Yêu cầu:
-Xưng hô "Chúng tôi - Em".
-Nhận xét khoảng 5-6 câu khách quan, ngắn gọn và khích lệ tinh thần học tập.
-Lưu ý nội dung trả về phải dạng text (không markdown) và đừng thêm bất cứ thông tin nào khác ngoài thông tin đã cho.
+- Viết khoảng 5–6 câu, logic và khách quan.
+- Xưng hô “Chúng tôi – Thí sinh”.
+- Nội dung phải dựa đúng vào dữ liệu trên, không thêm thông tin ngoài.
+- Nếu thí sinh có điểm tuyệt đối và không có nội dung cần cải thiện, hãy ghi nhận thành tích xuất sắc và khuyến khích phát huy thêm ở các kỳ thi tiếp theo.
+- Nếu không đạt điểm tuyệt đối hoặc có nội dung cần cải thiện, vừa nêu điểm mạnh, vừa góp ý ngắn gọn những mặt cần khắc phục.
+- Nếu thí sinh bỏ qua toàn bộ câu hỏi thì khuyến khích làm bài.
+- Giữ giọng văn khích lệ tinh thần học tập, kết thúc bằng lời động viên.
+- Trả về dạng text thuần (không markdown, không ký hiệu thừa).
 
-Kết quả theo mẫu ví dụ này:
-```
-Những kết quả này cho thấy em đã nắm vững các khái niệm toán học cơ bản. Tuy nhiên, như mọi hành trình học tập, vẫn có một vài lĩnh vực mà em cần luyện tập thêm:
-
-Đại số:
-    • Nắm vững các kỹ năng về căn bậc hai và căn thức
-    • Hiểu sâu về phương trình và hệ phương trình
-    • Kỹ năng giải toán thông qua lập hệ phương trình
-    • Ứng dụng bảng và biểu đồ tần số
-    
-Hình học:
-    • Nâng cao hiểu biết về tỉ số lượng giác của góc nhọn
-    • Nghiên cứu vị trí tương đối của đường thẳng và đường tròn
-    • Mở rộng kiến thức về các hình không gian (hình trụ, hình nón, hình cầu)
-
-Tôi khuyến nghị dành thêm thời gian cho những chủ đề này để củng cố kiến thức của em. Với khả năng và sự nỗ lực học tập đã thể hiện, tôi tin rằng em An sẽ sớm làm chủ được những khái niệm này thông qua việc luyện tập có trọng tâm.
-Nếu Quý phụ huynh có bất kỳ câu hỏi nào hoặc muốn biết thêm về các tài liệu học tập để hỗ trợ em An tiếp tục tiến bộ, xin đừng ngần ngại liên hệ với tôi.
-```
