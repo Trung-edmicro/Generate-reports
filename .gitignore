@@ -3,3 +3,5 @@
 input/
 output/
 __pycache__/
+logs/
+*.log
